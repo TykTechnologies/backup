@@ -120,33 +120,8 @@ upload() {
           fi
       fi
 
-#      statusCode=$(curl -o "/dev/null" -s -f -X POST -H "Authorization: $secret" -d "@$file" "$url/api/apis/oas" -w "%{http_code}")
-#      if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 300 ]]; then
-#        echo "$file uploaded to Tyk Dashboard successfully."
-#      elif [[ $statusCode -eq 409 ]]; then
-#        echo "$file already exists on Tyk Dashboard"
-#      else
-#        echo -e "\t[ERROR] Failed to upload OAS API with ID: $id, status code: $statusCode"
-#      fi
     done
 
-
-#    # Loop through all JSON files starting with "tykoas-"
-#    for file in tykoas-*.json; do
-#        # Check if the file exists
-#        if [ -f "$file" ]; then
-#            echo -e "\nUploading $file to $url"
-#            # Use curl to send the file as a POST request
-#            statusCode=$(curl -o "/dev/null" -s -f -X POST -H "Authorization: $secret" -d "@$file" "$url/api/apis/oas" -w "%{http_code}")
-#            if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 300 ]]; then
-#              echo "$file uploaded to Tyk Dashboard successfully."
-#            elif [[ $statusCode -eq 409 ]]; then
-#              echo "$file already exists on Tyk Dashboard"
-#            else
-#              echo -e "\t[ERROR] Failed to upload OAS API with ID: $id, status code: $statusCode"
-#            fi
-#        fi
-#    done
     echo -e "\nUpload operation completed."
 }
 
