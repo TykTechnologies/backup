@@ -1,4 +1,4 @@
-Usage: ./restore.sh [command] [options]
+Usage: ./backup.sh [command] [options]
 
 Commands:
  export    Export Tyk API Definitions and Policies from a Tyk Dashboard.
@@ -12,7 +12,7 @@ Options:
 
 Examples:
  Export Tyk API Definitions:
-    ./restore.sh export --url https://my-tyk-dashboard.com --secret mysecretkey --output definitions.json
+    ./backup.sh export --url https://my-tyk-dashboard.com --secret mysecretkey --output definitions.json
 
  Upload Tyk API Definitions:
-    ./restore.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --file definitions.json
+    ./backup.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --file definitions.json
