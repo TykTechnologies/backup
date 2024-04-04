@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
-# Function to copy files
 copy() {
     local url=""
     local secret=""
