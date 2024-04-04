@@ -11,8 +11,8 @@ Options:
  --file     (upload only) File containing the Tyk API Definitions to be uploaded (required).
 
 Examples:
- Export Tyk API Definitions:
+ Export Tyk API Definitions and Policies:
     ./backup.sh export --url https://my-tyk-dashboard.com --secret mysecretkey --output definitions.json
 
- Upload Tyk API Definitions:
+ Upload Tyk API Definitions and Policies:
     ./backup.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --file definitions.json
