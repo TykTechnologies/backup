@@ -5,14 +5,22 @@ Commands:
  upload    Upload Tyk API Definitions and Policies to a Tyk Dashboard.
 
 Options:
- --url      URL of the Tyk Dashboard (required).
- --secret   Access key of your user in the Tyk Dashboard (required).
- --output   (export only) Output file for the exported Tyk API Definitions (required).
- --file     (upload only) File containing the Tyk API Definitions to be uploaded (required).
+ --url            URL of the Tyk Dashboard (required).
+ --secret         Access key of your user in the Tyk Dashboard (required).
+ --api-output     (export only) Output file for the exported Tyk API Definitions (required).
+ --policy-output  (export only) Output file for the exported Tyk Policies (optional).
+ --api-file       (upload only) File containing the Tyk API Definitions to be uploaded (required).
+ --policy-file    (upload only) File containing the Tyk Policies to be uploaded (optional).
 
 Examples:
- Export Tyk API Definitions:
-    ./backup.sh export --url https://my-tyk-dashboard.com --secret mysecretkey --output definitions.json
+   Export Tyk API Definitions:
+      ./backup.sh export --url https://my-tyk-dashboard.com --secret mysecretkey --api-output apis.json
 
- Upload Tyk API Definitions:
-    ./backup.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --file definitions.json
+   Export Tyk API Definitions and Policies:
+      ./backup.sh export --url https://my-tyk-dashboard.com --secret mysecretkey --api-output apis.json --policy-output policies.json
+
+   Upload Tyk API Definitions:
+      ./backup.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --api-file apis.json
+
+   Upload Tyk API Definitions and Policies:
+      ./backup.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --api-file apis.json --policy-file policies.json
