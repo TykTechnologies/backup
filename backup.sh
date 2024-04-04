@@ -3,7 +3,8 @@
 export() {
     local url=""
     local secret=""
-    local output=""
+    local apiOutputFile=""
+    local policyOutputFile=""
 
     # Parse flags
     while (( "$#" )); do
@@ -16,8 +17,12 @@ export() {
                 secret="$2"
                 shift 2
                 ;;
-            --output)
-                output="$2"
+            --api-output )
+                apiOutputFile="$2"
+                shift 2
+                ;;
+            --policy-output)
+                policyOutputFile="$2"
                 shift 2
                 ;;
             *)
@@ -37,10 +42,12 @@ export() {
         echo "Error: --secret is required, which indicates the access key of your user in Tyk Dashboard"
         help
         exit 1
-    elif [[ -z "$output" ]]; then
-        echo "Error: --output is required, which indicates the output file including all Tyk API Definitions"
+    elif [[ -z "$apiOutputFile" ]]; then
+        echo "Error: --api-output is required, which indicates the output file including all Tyk API Definitions"
         help
         exit 1
+    elif [[ -z "$policyOutputFile" ]]; then
+        echo -e "Warning: --policy-output is empty, backup will not export Policies from Tyk Dashboard\n"
     fi
 
     echo "=> Creating backup API Definitions file from $url..."
@@ -52,24 +59,29 @@ export() {
         exit 1
     fi
 
-    echo "$response" | jq > "$output"
+    echo "$response" | jq > "$apiOutputFile"
 
-    echo "=> Creating backup Policy file from $url..."
-    response=$(curl -f -s -H "Authorization: $secret" "$url/api/portal/policies?p=-2")
-    if [[ $? -ne 0 ]]; then
-        echo "[ERROR] Failed to fetch Policies from Tyk Dashboard $url by using user access key $secret"
-        exit 1
+    if [[ -n "$policyOutputFile" ]]; then
+      echo "=> Creating backup Policy file from $url..."
+      response=$(curl -f -s -H "Authorization: $secret" "$url/api/portal/policies?p=-2")
+      if [[ $? -ne 0 ]]; then
+          echo "[ERROR] Failed to fetch Policies from Tyk Dashboard $url by using user access key $secret"
+          exit 1
+      fi
+      echo "$response" | jq > "$policyOutputFile"
+
+      echo "Export operation completed, API Definition backup file: $apiOutputFile, Policy backup file: $policyOutputFile."
+    else
+      echo "Export operation completed, API Definition backup file: $apiOutputFile."
     fi
-    echo "$response" | jq > policies.json
-
-    echo "Export operation completed, API Definition backup file: $output, Policy backup file: policies.json."
 }
 
 # Function to upload files
 upload() {
     local url=""
     local secret=""
-    local file=""
+    local apiFile=""
+    local policyFile=""
 
     # Parse flags
     while (( "$#" )); do
@@ -82,8 +94,12 @@ upload() {
                 secret="$2"
                 shift 2
                 ;;
-            --file)
-                file="$2"
+            --api-file)
+                apiFile="$2"
+                shift 2
+                ;;
+            --policy-file)
+                policyFile="$2"
                 shift 2
                 ;;
             *)
@@ -102,13 +118,15 @@ upload() {
         echo "Error: --secret is required, which indicates the access key of your user in Tyk Dashboard"
         help
         exit 1
-    elif [[ -z "$file" ]]; then
-        echo "Error: --file is required, which indicates the file including all Tyk API Definitions to be uploaded"
+    elif [[ -z "$apiFile" ]]; then
+        echo "Error: --api-file is required, which indicates the file including all Tyk API Definitions to be uploaded"
         help
         exit 1
+     elif [[ -z "$policyFile" ]]; then
+        echo -e "Warning: --policy-file is empty, backup will not upload Policies to Tyk Dashboard\n"
     fi
 
-    jq -c '.apis[]' $file | while read -r api;
+    jq -c '.apis[]' "$apiFile" | while read -r api;
     do
       apiID=$(echo "$api" | jq .api_definition.id)
       if isOAS=$(echo "$api" | jq -e '.api_definition.is_oas'); then
@@ -136,31 +154,33 @@ upload() {
       fi
     done
 
-    jq -c '.Data[]' policies.json | while read -r policy;
-    do
-      policyName=$(echo "$policy" | jq .name)
-      policyId=$(echo "$policy" | jq -r ._id)
-      echo "=> Uploading Policy '$policyName' with ID $policyId to Tyk Dashboard: $url"
+    if [[ -n "$policyFile" ]]; then
+      jq -c '.Data[]' "$policyFile" | while read -r policy;
+      do
+        policyName=$(echo "$policy" | jq .name)
+        policyId=$(echo "$policy" | jq -r ._id)
+        echo "=> Uploading Policy '$policyName' with ID $policyId to Tyk Dashboard: $url"
 
-      response=$(curl -s -H "Authorization: $secret" -X GET "$url/api/portal/policies/$policyId" -w "\n%{http_code}")
-      statusCode=$(tail -n1 <<< "$response")
-      content=$(sed '$ d' <<< "$response")
-      echo -e "\t Checking if Policy exists..."
-      if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 399 ]]; then
-        echo -e "\t Policy $policyName already exists on Tyk Dashboard"
-      else
-        echo -e "\t Policy does not exists, response from Tyk Dashboard $content"
-        response=$(curl -s -X POST -H "Authorization: $secret" -d "$policy" "$url/api/portal/policies" -w "\n%{http_code}")
+        response=$(curl -s -H "Authorization: $secret" -X GET "$url/api/portal/policies/$policyId" -w "\n%{http_code}")
         statusCode=$(tail -n1 <<< "$response")
         content=$(sed '$ d' <<< "$response")
-
-        if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 300 ]]; then
-          echo "Policy $policyName uploaded to Tyk Dashboard successfully."
+        echo -e "\t Checking if Policy exists..."
+        if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 399 ]]; then
+          echo -e "\t Policy $policyName already exists on Tyk Dashboard"
         else
-          echo -e "\t[ERROR] Failed to upload Policy $policyName, status code: $statusCode, response: $content"
+          echo -e "\t Policy does not exists, response from Tyk Dashboard $content"
+          response=$(curl -s -X POST -H "Authorization: $secret" -d "$policy" "$url/api/portal/policies" -w "\n%{http_code}")
+          statusCode=$(tail -n1 <<< "$response")
+          content=$(sed '$ d' <<< "$response")
+
+          if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 300 ]]; then
+            echo "Policy $policyName uploaded to Tyk Dashboard successfully."
+          else
+            echo -e "\t[ERROR] Failed to upload Policy $policyName, status code: $statusCode, response: $content"
+          fi
         fi
-      fi
-    done
+      done
+    fi
 }
 
 
