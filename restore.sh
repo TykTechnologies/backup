@@ -1,6 +1,6 @@
 #!/bin/bash
 
-copy() {
+export() {
     local url=""
     local secret=""
     local output=""
@@ -50,7 +50,7 @@ copy() {
 
     echo "$response" | jq > "$output"
 
-    echo "Copy operation completed."
+    echo "Export operation completed."
 }
 
 # Function to upload files
@@ -152,22 +152,22 @@ upload() {
 
 # Main script logic
 if [ "$#" -eq 0 ]; then
-    echo "No command specified. Please use 'copy' or 'upload'."
+    echo "No command specified. Please use 'export' or 'upload'."
     exit 1
 fi
 
 # Check the first argument to determine which command to run
 case $1 in
-    copy)
+    export)
         shift
-        copy "$@"
+        export "$@"
         ;;
     upload)
         shift
         upload "$@"
         ;;
     *)
-        echo "Invalid command. Please use 'copy' or 'upload'."
+        echo "Invalid command. Please use 'export' or 'upload'."
         exit 1
         ;;
 esac
