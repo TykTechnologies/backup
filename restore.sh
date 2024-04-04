@@ -57,7 +57,7 @@ copy() {
     # Iterate over each enabled resource and download it
     for id in $(echo "${oasAPIs}" | jq -r '.api_definition.id'); do
         echo "Downloading resource with ID: $id into ${id}.json..."
-        statusCode=$(curl -s -f -H "Authorization: $secret" "$url/api/apis/oas/$id/export" -o "$id.json" -w "%{http_code}")
+        statusCode=$(curl -s -f -H "Authorization: $secret" "$url/api/apis/oas/$id/export" -o "tykoas-$id.json" -w "%{http_code}")
         if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 300 ]]; then
             echo -e "$id.json is created..."
         else
@@ -68,15 +68,15 @@ copy() {
     echo "Copy operation completed."
 }
 
-# Function to sync files
-sync() {
-    echo "Syncing files..."
-    echo "Sync operation completed."
+# Function to upload files
+upload() {
+    echo "uploading files..."
+    echo "upload operation completed."
 }
 
 # Main script logic
 if [ "$#" -eq 0 ]; then
-    echo "No command specified. Please use 'copy' or 'sync'."
+    echo "No command specified. Please use 'copy' or 'upload'."
     exit 1
 fi
 
@@ -86,11 +86,11 @@ case $1 in
         shift
         copy "$@"
         ;;
-    sync)
-        sync
+    upload)
+        upload
         ;;
     *)
-        echo "Invalid command. Please use 'copy' or 'sync'."
+        echo "Invalid command. Please use 'copy' or 'upload'."
         exit 1
         ;;
 esac
