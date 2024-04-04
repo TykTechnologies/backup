@@ -22,6 +22,7 @@ export() {
                 ;;
             *)
                 echo "Unknown flag: $1"
+                help
                 exit 1
                 ;;
         esac
@@ -30,12 +31,15 @@ export() {
     # Validation
     if [[ -z "$url" ]]; then
         echo "Error: --url is required, which indicates the URL of Tyk Dashboard"
+        help
         exit 1
     elif [[ -z "$secret" ]]; then 
         echo "Error: --secret is required, which indicates the access key of your user in Tyk Dashboard"
+        help
         exit 1
     elif [[ -z "$output" ]]; then
         echo "Error: --output is required, which indicates the output file including all Tyk API Definitions"
+        help
         exit 1
     fi
 
@@ -92,12 +96,15 @@ upload() {
     # Validation
     if [[ -z "$url" ]]; then
         echo "Error: --url is required, which indicates the URL of Tyk Dashboard"
+        help
         exit 1
     elif [[ -z "$secret" ]]; then 
         echo "Error: --secret is required, which indicates the access key of your user in Tyk Dashboard"
+        help
         exit 1
     elif [[ -z "$file" ]]; then
         echo "Error: --file is required, which indicates the file including all Tyk API Definitions to be uploaded"
+        help
         exit 1
     fi
 
@@ -156,9 +163,16 @@ upload() {
     done
 }
 
+
+help() {
+    instructions=$(cat readme)
+    echo "$instructions"
+}
+
 # Main script logic
 if [ "$#" -eq 0 ]; then
     echo "No command specified. Please use 'export' or 'upload'."
+    help
     exit 1
 fi
 
@@ -174,6 +188,7 @@ case $1 in
         ;;
     *)
         echo "Invalid command. Please use 'export' or 'upload'."
+        help
         exit 1
         ;;
 esac
