@@ -6,7 +6,6 @@
 copy() {
     local url=""
     local secret=""
-    local dir=""
 
     # Parse flags
     while (( "$#" )); do
@@ -17,10 +16,6 @@ copy() {
                 ;;
             --secret)
                 secret="$2"
-                shift 2
-                ;;
-            --dir)
-                dir="$2"
                 shift 2
                 ;;
             *)
@@ -37,12 +32,9 @@ copy() {
     elif [[ -z "$secret" ]]; then 
         echo "Error: --secret is required, which indicates the access key of your user in Tyk Dashboard"
         exit 1
-    # elif [[ -z "$dir" ]]; then
-    #     echo "Error: --dir is required, which indicates the local path where OAS APIs will be saved from Tyk Dashboard"
-    #     exit 1
     fi
 
-    echo "Copying files from $url to $dir..."
+    echo "Copying OAS API Definitions from $url..."
 
     echo "Checking OAS APIs from $url..."
     # Send a GET request to list all resources
@@ -70,8 +62,54 @@ copy() {
 
 # Function to upload files
 upload() {
+    local url=""
+    local secret=""
+
+    # Parse flags
+    while (( "$#" )); do
+        case "$1" in
+            --url)
+                url="$2"
+                shift 2
+                ;;
+            --secret)
+                secret="$2"
+                shift 2
+                ;;
+            *)
+                echo "Unknown flag: $1"
+                exit 1
+                ;;
+        esac
+    done
+
+    # Validation
+    if [[ -z "$url" ]]; then
+        echo "Error: --url is required, which indicates the URL of Tyk Dashboard"
+        exit 1
+    elif [[ -z "$secret" ]]; then 
+        echo "Error: --secret is required, which indicates the access key of your user in Tyk Dashboard"
+        exit 1
+    fi
+    
     echo "uploading files..."
-    echo "upload operation completed."
+    # Loop through all JSON files starting with "tykoas-"
+    for file in tykoas-*.json; do
+        # Check if the file exists
+        if [ -f "$file" ]; then
+            echo -e "\nUploading $file to $url"
+            # Use curl to send the file as a POST request
+            statusCode=$(curl -o "/dev/null" -s -f -X POST -H "Authorization: $secret" -d "@$file" "$url/api/apis/oas" -w "%{http_code}")
+            if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 300 ]]; then
+              echo "$file uploaded to Tyk Dashboard successfully."
+            elif [[ $statusCode -eq 409 ]]; then
+              echo "$file already exists on Tyk Dashboard"
+            else
+              echo -e "\t[ERROR] Failed to upload OAS API with ID: $id, status code: $statusCode"
+            fi
+        fi
+    done
+    echo -e "\nUpload operation completed."
 }
 
 # Main script logic
@@ -87,7 +125,8 @@ case $1 in
         copy "$@"
         ;;
     upload)
-        upload
+        shift
+        upload "$@"
         ;;
     *)
         echo "Invalid command. Please use 'copy' or 'upload'."
