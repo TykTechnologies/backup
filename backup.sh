@@ -6,7 +6,6 @@ export() {
     local apiOutputFile=""
     local policyOutputFile=""
 
-    # Parse flags
     while (( "$#" )); do
         case "$1" in
             --url)
@@ -33,7 +32,6 @@ export() {
         esac
     done
 
-    # Validation
     if [[ -z "$url" ]]; then
         echo "Error: --url is required, which indicates the URL of Tyk Dashboard"
         help
@@ -52,7 +50,6 @@ export() {
 
     echo "=> Creating backup API Definitions file from $url..."
 
-    # Send a GET request to list all resources
     response=$(curl -f -s -H "Authorization: $secret" "$url/api/apis?p=-2")
     if [[ $? -ne 0 ]]; then
         echo "[ERROR] Failed to fetch API Definitions from Tyk Dashboard $url by using user access key $secret"
@@ -76,14 +73,12 @@ export() {
     fi
 }
 
-# Function to upload files
-upload() {
+import() {
     local url=""
     local secret=""
     local apiFile=""
     local policyFile=""
 
-    # Parse flags
     while (( "$#" )); do
         case "$1" in
             --url)
@@ -109,7 +104,6 @@ upload() {
         esac
     done
 
-    # Validation
     if [[ -z "$url" ]]; then
         echo "Error: --url is required, which indicates the URL of Tyk Dashboard"
         help
@@ -123,7 +117,7 @@ upload() {
         help
         exit 1
      elif [[ -z "$policyFile" ]]; then
-        echo -e "Warning: --policy-file is empty, backup will not upload Policies to Tyk Dashboard\n"
+        echo -e "Warning: --policy-file is empty, backup will not import Policies to Tyk Dashboard\n"
     fi
 
     jq -c '.apis[]' "$apiFile" | while read -r api;
@@ -139,7 +133,7 @@ upload() {
           elif [[ $statusCode -eq 409 ]]; then
             echo "OAS API Definition with ID $apiID already exists on Tyk Dashboard."
           else
-            echo -e "\t[ERROR] Failed to upload OAS API Definition with ID: $apiID, status code: $statusCode"
+            echo -e "\t[ERROR] Failed to import OAS API Definition with ID: $apiID, status code: $statusCode"
           fi
       else
           echo "=> Uploading Classic API Definition with ID: $apiID to Tyk Dashboard: $url"
@@ -149,7 +143,7 @@ upload() {
           elif [[ $statusCode -eq 409 ]]; then
             echo "Classic API Definition with ID $apiID already exists on Tyk Dashboard."
           else
-            echo -e "\t[ERROR] Failed to upload Classic API Definition with ID: $apiID, status code: $statusCode"
+            echo -e "\t[ERROR] Failed to import Classic API Definition with ID: $apiID, status code: $statusCode"
           fi
       fi
     done
@@ -176,7 +170,7 @@ upload() {
           if [[ $statusCode -ge 200 ]] && [[ $statusCode -lt 300 ]]; then
             echo "Policy $policyName uploaded to Tyk Dashboard successfully."
           else
-            echo -e "\t[ERROR] Failed to upload Policy $policyName, status code: $statusCode, response: $content"
+            echo -e "\t[ERROR] Failed to import Policy $policyName, status code: $statusCode, response: $content"
           fi
         fi
       done
@@ -189,16 +183,17 @@ help() {
 Usage: ./backup.sh [command] [options]
 
 Commands:
+ help      Print this message
  export    Export Tyk API Definitions and Policies from a Tyk Dashboard.
- upload    Upload Tyk API Definitions and Policies to a Tyk Dashboard.
+ import    Upload Tyk API Definitions and Policies to a Tyk Dashboard.
 
 Options:
  --url            URL of the Tyk Dashboard (required).
  --secret         Access key of your user in the Tyk Dashboard (required).
  --api-output     (export only) Output file for the exported Tyk API Definitions (required).
  --policy-output  (export only) Output file for the exported Tyk Policies (optional).
- --api-file       (upload only) File containing the Tyk API Definitions to be uploaded (required).
- --policy-file    (upload only) File containing the Tyk Policies to be uploaded (optional).
+ --api-file       (import only) File containing the Tyk API Definitions to be uploaded (required).
+ --policy-file    (import only) File containing the Tyk Policies to be uploaded (optional).
 
 Examples:
    Export Tyk API Definitions:
@@ -208,16 +203,16 @@ Examples:
       ./backup.sh export --url https://my-tyk-dashboard.com --secret mysecretkey --api-output apis.json --policy-output policies.json
 
    Upload Tyk API Definitions:
-      ./backup.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --api-file apis.json
+      ./backup.sh import --url https://my-tyk-dashboard.com --secret mysecretkey --api-file apis.json
 
    Upload Tyk API Definitions and Policies:
-      ./backup.sh upload --url https://my-tyk-dashboard.com --secret mysecretkey --api-file apis.json --policy-file policies.json
+      ./backup.sh import --url https://my-tyk-dashboard.com --secret mysecretkey --api-file apis.json --policy-file policies.json
 EOF
 }
 
 # Main script logic
 if [ "$#" -eq 0 ]; then
-    echo "No command specified. Please use 'export' or 'upload'."
+    echo "No command specified. Please use 'help', 'export' or 'import'."
     help
     exit 1
 fi
@@ -228,12 +223,16 @@ case $1 in
         shift
         export "$@"
         ;;
-    upload)
+    import)
         shift
-        upload "$@"
+        import "$@"
+        ;;
+    help)
+        shift
+        help "$@"
         ;;
     *)
-        echo "Invalid command. Please use 'export' or 'upload'."
+        echo "Invalid command. Please use 'export' or 'import'."
         help
         exit 1
         ;;
